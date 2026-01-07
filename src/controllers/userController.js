@@ -1,47 +1,19 @@
-// userController.js - VERSIÓN CORREGIDA (SIN DUPLICADOS)
-// SOLO ESTA LÍNEA DE IMPORT, NO MÁS
 import { UserModel } from '../models/userModel.js';
 
-// En userController.js - getUsers function CORREGIDA
+// Obtener todos los usuarios
+// En getUsers function, cambiar la respuesta:
+// En userController.js, función getUsers - DEBE DEVOLVER ARRAY:
 export const getUsers = async (req, res) => {
     try {
-        console.log('🎯 GET /api/users - Usuario:', req.user?.email || 'No user');
+        console.log('🔄 Consultando usuarios desde MySQL...');
+        const usuarios = await UserModel.getAll();
         
-        // ⚠️ MODO EMERGENCIA: Sin verificación
-        console.log('🔓 Acceso concedido sin verificación');
-        
-        // CONEXIÓN DIRECTA con mysql2
-        const mysql = await import('mysql2/promise');
-        const connection = await mysql.default.createConnection({
-            host: process.env.MYSQLHOST,
-            port: process.env.MYSQLPORT,
-            user: process.env.MYSQLUSER,
-            password: process.env.MYSQLPASSWORD,
-            database: process.env.MYSQLDATABASE
-        });
-        
-        const [users] = await connection.execute(`
-            SELECT id, nombres, email, role, estado
-            FROM usuario 
-            ORDER BY id DESC
-            LIMIT 50
-        `);
-        
-        await connection.end();
-        
-        return res.json({
-            success: true,
-            count: users.length,
-            data: users
-        });
+        // ✅ DEVOLVER ARRAY DIRECTO, NO OBJETO
+        res.status(200).json(usuarios);
         
     } catch (error) {
         console.error('❌ Error en getUsers:', error);
-        return res.status(500).json({ 
-            success: false,
-            message: 'Error al obtener usuarios',
-            error: error.message 
-        });
+        res.status(500).json({ error: "Error al obtener usuarios" });
     }
 };
 
