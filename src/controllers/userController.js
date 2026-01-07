@@ -3,47 +3,60 @@ import { UserModel } from '../models/userModel.js';
 // ✅ CORRECCIÓN 2: Si NO es export default
 import { db } from '../config/db.js'; // Con llaves
 
-// VERSIÓN ALTERNATIVA si UserModel no tiene getAll()
+import { UserModel } from '../models/userModel.js';
+
+// En userController.js - getUsers function CORREGIDA
 export const getUsers = async (req, res) => {
     try {
-        console.log('🚨 MODO EMERGENCIA: getUsers sin verificación');
+        console.log('🎯 GET /api/users - Usuario:', req.user?.email || 'No user');
         
-        // 1. Importar db directamente (si es necesario)
-        import db from '../config/db.js';
+        // ⚠️ MODO EMERGENCIA: Sin verificación
+        console.log('🔓 Acceso concedido sin verificación');
         
-        // 2. Consulta directa
-        const [users] = await db.execute(`
-            SELECT id, nombres, apellidos, email, telefono, dni, ruc, role, estado, fecha_registro
-            FROM usuario 
-            ORDER BY id DESC
-        `);
+        // OPCIÓN 1: Usar UserModel si tiene getAll()
+        // const users = await UserModel.getAll();
         
-        console.log(`✅ ${users.length} usuarios encontrados`);
-        
-        // 3. Devolver sin formatear mucho
-        return res.status(200).json({
-            success: true,
-            emergency_mode: true,
-            count: users.length,
-            data: users
+        // OPCIÓN 2: Conexión directa SIN import db
+        // Necesitarías importar mysql2/promise aquí
+        import('mysql2/promise').then(async (mysql) => {
+            const connection = await mysql.createConnection({
+                host: process.env.MYSQLHOST,
+                port: process.env.MYSQLPORT,
+                user: process.env.MYSQLUSER,
+                password: process.env.MYSQLPASSWORD,
+                database: process.env.MYSQLDATABASE
+            });
+            
+            const [users] = await connection.execute(`
+                SELECT id, nombres, email, role, estado
+                FROM usuario 
+                ORDER BY id DESC
+                LIMIT 50
+            `);
+            
+            await connection.end();
+            
+            res.json({
+                success: true,
+                count: users.length,
+                data: users
+            });
+        }).catch(error => {
+            console.error('❌ Error de MySQL:', error);
+            res.status(500).json({ error: error.message });
         });
         
     } catch (error) {
-        console.error('❌ Error crítico en getUsers:', error);
-        
-        // Respuesta de emergencia si todo falla
-        return res.status(200).json({
-            success: true,
-            emergency_data: true,
-            count: 2,
-            data: [
-                { id: 1, nombres: "Admin", email: "admin@utilmark.com", role: "admin", estado: "activo" },
-                { id: 2, nombres: "Usuario Demo", email: "demo@utilmark.com", role: "cliente", estado: "activo" }
-            ],
-            message: "Modo emergencia activado - Datos de prueba"
+        console.error('❌ Error en getUsers:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Error al obtener usuarios',
+            error: error.message 
         });
     }
 };
+
+// ... resto de las funciones (getUserById, createUser, etc.) ...
 // Obtener un usuario por ID
 export const getUserById = async (req, res) => {
     try {
