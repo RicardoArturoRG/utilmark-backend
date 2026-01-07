@@ -5,24 +5,28 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const pool = mysql.createPool({
-  host: process.env.DB_HOST,                 // ✅ SiteGround host
-  user: process.env.DB_USER,                 // ✅ usuario BD SiteGround
-  password: process.env.DB_PASSWORD,         // ✅ password BD SiteGround
-  database: process.env.DB_NAME,             // ✅ nombre BD SiteGround
-  port: Number(process.env.DB_PORT || 3306), // ✅ por si cambia
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT,
+  ssl: {
+    rejectUnauthorized: false
+  },
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0,
-  timezone: "Z"                              // ✅ UTC (equivalente a +00:00)
+  queueLimit: 0
 });
 
-const getConnection = async () => {
-  const conn = await pool.getConnection();
-  return conn;
-};
+// Test de conexión (opcional pero recomendado)
+(async () => {
+  try {
+    const conn = await pool.getConnection();
+    console.log("✅ MySQL conectado correctamente");
+    conn.release();
+  } catch (error) {
+    console.error("❌ Error conectando a MySQL:", error.message);
+  }
+})();
 
-export default {
-  pool,
-  query: (...args) => pool.query(...args),
-  getConnection
-};
+export default pool;
