@@ -1,8 +1,6 @@
+// userController.js - VERSIÓN CORREGIDA (SIN DUPLICADOS)
+// SOLO ESTA LÍNEA DE IMPORT, NO MÁS
 import { UserModel } from '../models/userModel.js';
-// Al inicio de userController.js, después de los imports
-// ✅ CORRECCIÓN 2: Si NO es export default
-
-
 
 // En userController.js - getUsers function CORREGIDA
 export const getUsers = async (req, res) => {
@@ -12,42 +10,34 @@ export const getUsers = async (req, res) => {
         // ⚠️ MODO EMERGENCIA: Sin verificación
         console.log('🔓 Acceso concedido sin verificación');
         
-        // OPCIÓN 1: Usar UserModel si tiene getAll()
-        // const users = await UserModel.getAll();
+        // CONEXIÓN DIRECTA con mysql2
+        const mysql = await import('mysql2/promise');
+        const connection = await mysql.default.createConnection({
+            host: process.env.MYSQLHOST,
+            port: process.env.MYSQLPORT,
+            user: process.env.MYSQLUSER,
+            password: process.env.MYSQLPASSWORD,
+            database: process.env.MYSQLDATABASE
+        });
         
-        // OPCIÓN 2: Conexión directa SIN import db
-        // Necesitarías importar mysql2/promise aquí
-        import('mysql2/promise').then(async (mysql) => {
-            const connection = await mysql.createConnection({
-                host: process.env.MYSQLHOST,
-                port: process.env.MYSQLPORT,
-                user: process.env.MYSQLUSER,
-                password: process.env.MYSQLPASSWORD,
-                database: process.env.MYSQLDATABASE
-            });
-            
-            const [users] = await connection.execute(`
-                SELECT id, nombres, email, role, estado
-                FROM usuario 
-                ORDER BY id DESC
-                LIMIT 50
-            `);
-            
-            await connection.end();
-            
-            res.json({
-                success: true,
-                count: users.length,
-                data: users
-            });
-        }).catch(error => {
-            console.error('❌ Error de MySQL:', error);
-            res.status(500).json({ error: error.message });
+        const [users] = await connection.execute(`
+            SELECT id, nombres, email, role, estado
+            FROM usuario 
+            ORDER BY id DESC
+            LIMIT 50
+        `);
+        
+        await connection.end();
+        
+        return res.json({
+            success: true,
+            count: users.length,
+            data: users
         });
         
     } catch (error) {
         console.error('❌ Error en getUsers:', error);
-        res.status(500).json({ 
+        return res.status(500).json({ 
             success: false,
             message: 'Error al obtener usuarios',
             error: error.message 
@@ -55,7 +45,6 @@ export const getUsers = async (req, res) => {
     }
 };
 
-// ... resto de las funciones (getUserById, createUser, etc.) ...
 // Obtener un usuario por ID
 export const getUserById = async (req, res) => {
     try {
