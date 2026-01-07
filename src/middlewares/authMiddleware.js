@@ -10,7 +10,7 @@ export const isAdmin = (req, res, next) => {
     console.log('⚠️ PERMITIENDO ACCESO A TODOS (modo emergencia)');
     return next(); // ← ¡ESTO PERMITE EL ACCESO!
     
-    /*
+    
     // ⚠️ COMENTA TODO ESTO TEMPORALMENTE:
     if (!req.user) {
         console.error('❌ No hay usuario en la request');
@@ -45,5 +45,5 @@ export const isAdmin = (req, res, next) => {
     
     console.log('✅ Acceso concedido como admin');
     next();
-    */
+    
 };
