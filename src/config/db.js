@@ -5,14 +5,15 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const pool = mysql.createPool({
-  host: process.env.DB_HOST || "localhost",
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: "utilmark",  // ← CAMBIADO DE "UTILMARK" a "utilmark"
+  host: process.env.DB_HOST,                 // ✅ SiteGround host
+  user: process.env.DB_USER,                 // ✅ usuario BD SiteGround
+  password: process.env.DB_PASSWORD,         // ✅ password BD SiteGround
+  database: process.env.DB_NAME,             // ✅ nombre BD SiteGround
+  port: Number(process.env.DB_PORT || 3306), // ✅ por si cambia
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  timezone: "+00:00"
+  timezone: "Z"                              // ✅ UTC (equivalente a +00:00)
 });
 
 const getConnection = async () => {
