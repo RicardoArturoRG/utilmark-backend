@@ -24,7 +24,7 @@ router.put("/:id", updateUser);
 
 // PATCH /api/users/:id/status - Cambiar estado del usuario
 router.patch("/:id/status", changeUserStatus);
-router.get('/users', userController.getUsers); // S
+
 // DELETE /api/users/:id - Eliminar usuario
 router.delete("/:id", deleteUser);
 
