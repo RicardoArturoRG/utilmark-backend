@@ -1,6 +1,8 @@
 import { UserModel } from '../models/userModel.js';
 // Al inicio de userController.js, después de los imports
-import db from '../config/db.js'; // ← Agrega esto si no existe
+// ✅ CORRECCIÓN 2: Si NO es export default
+import { db } from '../config/db.js'; // Con llaves
+
 // VERSIÓN ALTERNATIVA si UserModel no tiene getAll()
 export const getUsers = async (req, res) => {
     try {
