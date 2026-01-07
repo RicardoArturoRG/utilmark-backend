@@ -1,7 +1,7 @@
 import { UserModel } from '../models/userModel.js';
 // Al inicio de userController.js, después de los imports
 // ✅ CORRECCIÓN 2: Si NO es export default
-import { db } from '../config/db.js'; // Con llaves
+
 
 
 // En userController.js - getUsers function CORREGIDA
