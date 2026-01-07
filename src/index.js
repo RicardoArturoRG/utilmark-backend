@@ -145,14 +145,22 @@ app.use((req, res) => {
   });
 });
 
-// ===================== ERROR HANDLER =====================
+// ===================== ERROR HANDLER (SEGURO) =====================
 app.use((err, req, res, next) => {
-  console.error("❌ Error interno:", err);
+  console.error("❌ Error interno:");
+
+  if (err) {
+    console.error(err.stack || err.message || err);
+  } else {
+    console.error("⚠️ Error handler llamado sin error");
+  }
+
   res.status(500).json({
     success: false,
     message: "Error interno del servidor",
   });
 });
+
 
 // ===================== START SERVER =====================
 const PORT = process.env.PORT || 3000;
