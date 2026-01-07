@@ -111,31 +111,6 @@ app.get("/api/email/test", async (req, res) => {
   }
 });
 
-// ===================== DEBUG ROUTES =====================
-app.get("/api/debug/routes", (req, res) => {
-  const routes = [];
-
-  const extractRoutes = (stack, prefix = "") => {
-    stack.forEach((layer) => {
-      if (layer.route) {
-        const methods = Object.keys(layer.route.methods);
-        routes.push({
-          method: methods[0].toUpperCase(),
-          path: prefix + layer.route.path,
-        });
-      } else if (layer.name === "router" && layer.handle.stack) {
-        extractRoutes(layer.handle.stack, prefix);
-      }
-    });
-  };
-
-  extractRoutes(app._router.stack);
-
-  res.json({
-    total: routes.length,
-    routes,
-  });
-});
 
 // ===================== 404 HANDLER =====================
 app.use((req, res) => {
