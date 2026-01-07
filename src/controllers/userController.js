@@ -3,7 +3,6 @@ import { UserModel } from '../models/userModel.js';
 // ✅ CORRECCIÓN 2: Si NO es export default
 import { db } from '../config/db.js'; // Con llaves
 
-import { UserModel } from '../models/userModel.js';
 
 // En userController.js - getUsers function CORREGIDA
 export const getUsers = async (req, res) => {
