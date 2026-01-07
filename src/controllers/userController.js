@@ -1,32 +1,36 @@
 import { UserModel } from '../models/userModel.js';
 
-// Obtener todos los usuarios
-// En getUsers function, cambiar la respuesta:
-// En userController.js, función getUsers - DEBE DEVOLVER ARRAY:
 // En userController.js - getUsers function
 export const getUsers = async (req, res) => {
     try {
-        console.log('🎯 GET USERS - Usuario que solicita:', req.user?.email);
-        console.log('🔓 MODO EMERGENCIA: Sin verificación de admin');
+        console.log('🎯 GET /api/users - Usuario:', req.user?.email);
         
-        // ⚠️ COMENTA TODA LA VERIFICACIÓN TEMPORALMENTE
-        // if (!req.user || req.user.role !== 'admin') {
-        //     return res.status(403).json({ 
-        //         success: false,
-        //         message: 'Se requieren permisos de administrador' 
-        //     });
-        // }
+        // ⚠️ ⚠️ ⚠️ COMENTA ESTAS LÍNEAS TEMPORALMENTE ⚠️ ⚠️ ⚠️
+        /*
+        // Verificar si el usuario es administrador
+        if (!req.user || req.user.role !== 'admin') {
+            console.log('❌ Usuario no es admin:', req.user?.role);
+            return res.status(403).json({ 
+                success: false,
+                message: 'No tienes permisos de administrador para ver usuarios.' 
+            });
+        }
+        */
         
-        // Tu consulta a la base de datos
-        const [users] = await db.query(`
+        console.log('✅ Verificación omitida - Acceso concedido');
+        
+        // Tu consulta SQL
+        const query = `
             SELECT id, nombres, apellidos, email, telefono, dni, ruc, role, estado, fecha_registro
             FROM usuario 
             ORDER BY id DESC
-        `);
+        `;
         
-        console.log(`✅ Usuarios encontrados: ${users.length}`);
+        const [users] = await db.execute(query);
         
-        return res.json({
+        console.log(`📊 Usuarios encontrados: ${users.length}`);
+        
+        return res.status(200).json({
             success: true,
             count: users.length,
             data: users
@@ -35,8 +39,9 @@ export const getUsers = async (req, res) => {
     } catch (error) {
         console.error('❌ Error en getUsers:', error);
         return res.status(500).json({ 
-            success: false, 
-            message: 'Error al obtener usuarios' 
+            success: false,
+            message: 'Error al obtener usuarios',
+            error: error.message 
         });
     }
 };
