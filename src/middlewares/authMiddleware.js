@@ -115,3 +115,43 @@ export const verifyToken = async (req, res, next) => {
         });
     }
 };
+// En authMiddleware.js - MODIFICACIÓN TEMPORAL
+export const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    
+    if (!token) {
+        return res.status(401).json({ 
+            success: false,
+            message: 'Token requerido' 
+        });
+    }
+    
+    console.log('🔍 Token recibido:', token);
+    
+    // ⚠️ TEMPORAL: Si es token temporal, crear usuario falso
+    if (token.startsWith('temp-admin-token-')) {
+        console.log('⚠️ Usando token temporal - Modo desarrollo');
+        req.user = {
+            id: 1,
+            email: 'riquelme@utilmark.com',
+            nombres: 'Admin',
+            role: 'admin',
+            estado: 'activo',
+            isTempToken: true
+        };
+        return next();
+    }
+    
+    // Si no es token temporal, verificar JWT normal
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded;
+        next();
+    } catch (error) {
+        return res.status(403).json({ 
+            success: false,
+            message: 'Token inválido' 
+        });
+    }
+};
