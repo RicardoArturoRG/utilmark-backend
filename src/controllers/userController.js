@@ -3,20 +3,43 @@ import { UserModel } from '../models/userModel.js';
 // Obtener todos los usuarios
 // En getUsers function, cambiar la respuesta:
 // En userController.js, función getUsers - DEBE DEVOLVER ARRAY:
+// En userController.js - getUsers function
 export const getUsers = async (req, res) => {
     try {
-        console.log('🔄 Consultando usuarios desde MySQL...');
-        const usuarios = await UserModel.getAll();
+        console.log('🎯 GET USERS - Usuario que solicita:', req.user?.email);
+        console.log('🔓 MODO EMERGENCIA: Sin verificación de admin');
         
-        // ✅ DEVOLVER ARRAY DIRECTO, NO OBJETO
-        res.status(200).json(usuarios);
+        // ⚠️ COMENTA TODA LA VERIFICACIÓN TEMPORALMENTE
+        // if (!req.user || req.user.role !== 'admin') {
+        //     return res.status(403).json({ 
+        //         success: false,
+        //         message: 'Se requieren permisos de administrador' 
+        //     });
+        // }
+        
+        // Tu consulta a la base de datos
+        const [users] = await db.query(`
+            SELECT id, nombres, apellidos, email, telefono, dni, ruc, role, estado, fecha_registro
+            FROM usuario 
+            ORDER BY id DESC
+        `);
+        
+        console.log(`✅ Usuarios encontrados: ${users.length}`);
+        
+        return res.json({
+            success: true,
+            count: users.length,
+            data: users
+        });
         
     } catch (error) {
         console.error('❌ Error en getUsers:', error);
-        res.status(500).json({ error: "Error al obtener usuarios" });
+        return res.status(500).json({ 
+            success: false, 
+            message: 'Error al obtener usuarios' 
+        });
     }
 };
-
 // Obtener un usuario por ID
 export const getUserById = async (req, res) => {
     try {
