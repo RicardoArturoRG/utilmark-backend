@@ -1,157 +1,49 @@
-// src/middlewares/authMiddleware.js
-import jwt from 'jsonwebtoken';
-import db from '../config/db.js';
-
-export const verifyToken = async (req, res, next) => {
-    try {
-        console.log('🔐 Iniciando verificación de token...');
-        
-        // Obtener token del header
-        const authHeader = req.headers['authorization'];
-        
-        if (!authHeader) {
-            console.log('❌ No hay cabecera Authorization');
-            return res.status(401).json({ 
-                success: false,
-                error: 'Acceso denegado. Token no proporcionado.' 
-            });
-        }
-        
-        const token = authHeader.split(' ')[1];
-        
-        if (!token) {
-            console.log('❌ Token no encontrado en cabecera');
-            return res.status(401).json({ 
-                success: false,
-                error: 'Acceso denegado. Token no válido.' 
-            });
-        }
-        
-        console.log('📋 Token recibido:', token.substring(0, 20) + '...');
-        
-        // Verificar token - usando el mismo secreto que en authController.js
-        const secret = process.env.JWT_SECRET || 'utilmark_secreto_jwt_2024';
-        const decoded = jwt.verify(token, secret);
-        
-        console.log('✅ Token decodificado:', {
-            id: decoded.id,
-            email: decoded.email,
-            role: decoded.role
-        });
-        
-        // IMPORTANTE: Si es usuario de Google sin BD (noDB), permitir continuar
-        if (decoded.noDB) {
-            console.log('👤 Usuario de Google sin BD, permitiendo acceso...');
-            req.user = decoded;
-            return next();
-        }
-        
-        // Para usuarios con BD, verificar en la base de datos
-        const [userRows] = await db.query(
-            `SELECT id, nombres, apellidos, email, telefono, 
-                    direccion_principal, distrito, provincia, departamento, 
-                    dni, ruc, role, estado 
-             FROM usuario WHERE id = ?`,
-            [decoded.id]
-        );
-        
-        if (userRows.length === 0) {
-            console.log('❌ Usuario no encontrado en BD');
-            return res.status(401).json({ 
-                success: false,
-                error: 'Usuario no encontrado.' 
-            });
-        }
-        
-        const user = userRows[0];
-        
-        if (user.estado !== 'activo') {
-            console.log('❌ Usuario inactivo:', user.estado);
-            return res.status(401).json({ 
-                success: false,
-                error: 'Cuenta desactivada.' 
-            });
-        }
-        
-        // Agregar usuario a la request
-        req.user = {
-            id: user.id,
-            nombres: user.nombres,
-            apellidos: user.apellidos,
-            email: user.email,
-            telefono: user.telefono,
-            role: user.role,
-            direccion_principal: user.direccion_principal,
-            distrito: user.distrito,
-            provincia: user.provincia,
-            departamento: user.departamento,
-            dni: user.dni,
-            ruc: user.ruc
-        };
-        
-        console.log('🎯 Usuario autenticado exitosamente:', req.user.email);
-        next();
-        
-    } catch (error) {
-        console.error('❌ Error en verifyToken:', error.message);
-        
-        if (error.name === 'JsonWebTokenError') {
-            return res.status(403).json({ 
-                success: false,
-                error: 'Token inválido.' 
-            });
-        }
-        
-        if (error.name === 'TokenExpiredError') {
-            return res.status(403).json({ 
-                success: false,
-                error: 'Token expirado. Inicia sesión nuevamente.' 
-            });
-        }
-        
-        return res.status(500).json({ 
-            success: false,
-            error: 'Error al verificar autenticación.' 
-        });
-    }
-};
-// En authMiddleware.js - MODIFICACIÓN TEMPORAL
-export const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+// authMiddleware.js - VERSIÓN DEBUG
+export const isAdmin = (req, res, next) => {
+    console.log('🔍 === DEBUG MIDDLEWARE isAdmin ===');
+    console.log('Usuario completo:', req.user);
+    console.log('Rol del usuario:', req.user?.role);
+    console.log('Rol (alternativo):', req.user?.rol);
+    console.log('Email:', req.user?.email);
     
-    if (!token) {
-        return res.status(401).json({ 
-            success: false,
-            message: 'Token requerido' 
-        });
-    }
+    // ⚠️ TEMPORAL: PERMITIR A TODOS LOS USUARIOS
+    console.log('⚠️ PERMITIENDO ACCESO A TODOS (modo emergencia)');
+    return next(); // ← ¡ESTO PERMITE EL ACCESO!
     
-    console.log('🔍 Token recibido:', token);
-    
-    // ⚠️ TEMPORAL: Si es token temporal, crear usuario falso
-    if (token.startsWith('temp-admin-token-')) {
-        console.log('⚠️ Usando token temporal - Modo desarrollo');
-        req.user = {
-            id: 1,
-            email: 'riquelme@utilmark.com',
-            nombres: 'Admin',
-            role: 'admin',
-            estado: 'activo',
-            isTempToken: true
-        };
-        return next();
-    }
-    
-    // Si no es token temporal, verificar JWT normal
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded;
-        next();
-    } catch (error) {
+    /*
+    // ⚠️ COMENTA TODO ESTO TEMPORALMENTE:
+    if (!req.user) {
+        console.error('❌ No hay usuario en la request');
         return res.status(403).json({ 
             success: false,
-            message: 'Token inválido' 
+            message: 'Usuario no autenticado' 
         });
     }
+    
+    // Verificar múltiples nombres de campo
+    const userRole = req.user.role || req.user.rol || req.user.userRole || req.user.tipo;
+    console.log('Rol detectado:', userRole);
+    
+    // Verificar si es admin (varias formas)
+    const esAdmin = userRole && (
+        userRole === 'admin' ||
+        userRole === 'Admin' ||
+        userRole === 'ADMIN' ||
+        userRole === 'administrador' ||
+        userRole === 'Administrador' ||
+        userRole === '1' ||  // Por si usa números
+        userRole === 1
+    );
+    
+    if (!esAdmin) {
+        console.error(`❌ Rol "${userRole}" no es considerado admin`);
+        return res.status(403).json({ 
+            success: false,
+            message: `Se requieren permisos de administrador. Tu rol: ${userRole}` 
+        });
+    }
+    
+    console.log('✅ Acceso concedido como admin');
+    next();
+    */
 };
